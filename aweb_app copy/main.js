@@ -24,8 +24,7 @@ emergency_stop_btn.addEventListener('click', () =>{
   drone_X = 0;
   drone_Y = 0;
   atitude_slider.value = 0;
-  sendtows();
-  wsSendData('runns');
+  wsSendData(0);
   set_value_range_slider('atitude_slider');
 });
 // x_slider.addEventListener('change', () => {
@@ -40,11 +39,11 @@ emergency_stop_btn.addEventListener('click', () =>{
 //   sendtows();
 // });
 
-let kpidvalues = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+let kpidvalues = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]];
 
 function changeKpid() {
   const kpid_cat = document.getElementById('kpid_cat').value;
-  let col = kpid_cat === "kpid" ? 0 : kpid_cat === "krRP" ? 1 : kpid_cat === "kryw" ? 2 : 0;
+  let col = kpid_cat === "Rpid" ? 0 : kpid_cat === "Ppid" ? 1 : kpid_cat === "Ypid" ? 2 : kpid_cat === "Apid" ? 3 : 0;
 
   document.getElementById('kp').value = kpidvalues[col][0]
   document.getElementById('ki').value = kpidvalues[col][1]
@@ -159,6 +158,8 @@ function stopDrawing() {
   document.getElementById("y_coordinate").innerText = 0;
   // document.getElementById("speed").innerText = 0;
   // document.getElementById("angle").innerText = 0;
+  // drone_Y = 992;
+  // drone_X = 992;
   drone_Y = 0;
   drone_X = 0;
     sendtows();
@@ -205,6 +206,8 @@ function Draw(event) {
 
     x_relative = Math.round(mapRange(x_relative, -150, 150, -100, 100));
     y_relative = Math.round(mapRange(y_relative, -150, 150, -100, 100));
+    // x_relative = Math.round(mapRange(x_relative, -150, 150, 192, 1792));
+    // y_relative = Math.round(mapRange(y_relative, -150, 150, 192, 1792));
 
     drone_Y = y_relative;
     drone_X = x_relative;
@@ -225,16 +228,24 @@ function Draw(event) {
 // const ws = new WebSocket('ws://192.168.238.130:81'); // Replace with your ESP32's WebSocket URL
 // const ws = new WebSocket('ws://192.168.1.8:81'); // Replace with your ESP32's WebSocket URL
 const ws = new WebSocket('ws://drone.local:81'); // Replace with your ESP32's WebSocket URL
+// const ws = new WebSocket('ws://drone.local/ws'); // Replace with your ESP32's WebSocket URL
 // const ws = new WebSocket('ws://esp32-update.local:81'); // Replace with your ESP32's WebSocket URL
 // const ws = new WebSocket('ws://192.168.1.9/ws'); // Replace with your ESP32's WebSocket URL
 let binchuncksend = false;
 let deb_consoleData = "";
+
+let ws_connected = false;
+let mode_run = false;
+
 function resetcon() {
   deb_consoleData = "";
   document.getElementById('deb_console').innerText = deb_consoleData;
 }
 ws.onopen = () => {
   console.log('Connected to WebSocket');
+  setTimeout(() => {
+    ws_connected = true; 
+  }, 500);
 };
 
 ws.onmessage = (event) => {
@@ -247,8 +258,14 @@ ws.onmessage = (event) => {
       const decoderTXT = new TextDecoder('utf-8');
       let dtType = decoderTXT.decode(wsBufArr.slice(0, 4));
       console.log("dtype :" + dtType + "buf", wsBufArr.slice(4));
+      
+      if (dtType === "LFRQ") {
+        document.getElementById('loop_frq_meter').innerText = " LF: " + binaryToInt(wsBufArr.slice(4, 6), 'i16');
 
-      if (dtType === "motc") {
+      } else  if (dtType === "WRSS") {
+        document.getElementById('wifi_sognal_str').innerText = " WIFI: " + binaryToInt(wsBufArr.slice(4, 6), 'i16');
+
+      } else if (dtType === "motc") {
         document.getElementById('calib_mot_1').value = binaryToInt(wsBufArr.slice(4, 6), 'i16');
         document.getElementById('calib_mot_2').value = binaryToInt(wsBufArr.slice(6, 8), 'i16');
         document.getElementById('calib_mot_3').value = binaryToInt(wsBufArr.slice(8, 10), 'i16');
@@ -256,8 +273,8 @@ ws.onmessage = (event) => {
 
       } else if (dtType === "motm") {
         document.getElementById('max_mot').value = binaryToInt(wsBufArr.slice(4, 8), 'i16');
-      } else if (dtType === "kpid" || dtType === "krRP" || dtType === "kryw") {
-        let col = dtType === "kpid" ? 0 : dtType === "krRP" ? 1 : dtType === "kryw" ? 2 : 0;
+      } else if (dtType === "Rpid" || dtType === "Ppid" || dtType === "Ypid" || dtType === "ARid") {
+        let col = dtType === "Rpid" ? 0 : dtType === "Ppid" ? 1 : dtType === "Ypid" ? 2 : dtType === "ARid" ? 3 : 0;
 
         kpidvalues[col][0] = binaryToInt(wsBufArr.slice(4, 8), 'f32');
         kpidvalues[col][1] = binaryToInt(wsBufArr.slice(8, 12), 'f32');
@@ -268,12 +285,12 @@ ws.onmessage = (event) => {
         // document.getElementById('ki').value = binaryToInt(wsBufArr.slice(8,12), 'f32');
         // document.getElementById('kd').value = binaryToInt(wsBufArr.slice(12,16), 'f32');
       }
-      if (dtType === "mots") {
-        document.getElementById('calib_mot_1').value = binaryToInt(wsBufArr.slice(4, 6), 'i16');
-        document.getElementById('calib_mot_2').value = binaryToInt(wsBufArr.slice(6, 8), 'i16');
-        // document.getElementById('calib_mot_3').value = binaryToInt(wsBufArr.slice(8,12), 'i16');
-        // document.getElementById('calib_mot_4').value = binaryToInt(wsBufArr.slice(12,16), 'i16');
-      }
+      // if (dtType === "mots") {
+      //   document.getElementById('calib_mot_1').value = binaryToInt(wsBufArr.slice(4, 6), 'i16');
+      //   document.getElementById('calib_mot_2').value = binaryToInt(wsBufArr.slice(6, 8), 'i16');
+      //   // document.getElementById('calib_mot_3').value = binaryToInt(wsBufArr.slice(8,12), 'i16');
+      //   // document.getElementById('calib_mot_4').value = binaryToInt(wsBufArr.slice(12,16), 'i16');
+      // }
 
 
     }).catch((error) => console.log("error blob : ", error));
@@ -287,10 +304,12 @@ ws.onmessage = (event) => {
       if (ws_data == "wschunk") binchuncksend = false;
       else if (ws_data[0] == "P") document.getElementById('progress').innerText = 'ESP update ' + ws_data.slice(1) + ' %';
     }
+    else if (ws_dt_type == "mpf") document.getElementById('loop_frq_meter').innerText = ws_data;
     else if (ws_dt_type == "CMD") document.getElementById('progress').innerText = ws_data;
     else if (ws_dt_type == "JUN") document.getElementById('junjun').innerText = ws_data;
     else if (ws_dt_type == "JUC") document.getElementById('jucjuc').innerText = ws_data;
     else if (ws_dt_type == "DEB") {
+    // else if (ws_dt_type == "DEBG") {
       if (deb_consoleData.length > 10000) deb_consoleData = deb_consoleData.slice(1000);
       deb_consoleData += ws_data;
       document.getElementById('deb_console').innerText = deb_consoleData;
@@ -421,29 +440,22 @@ document.getElementById('espReset').addEventListener('click', () => {
   console.log("rest");
 });
 
+function sendControlBtn(val){
+  let value = (val === "input") ? document.getElementById('ctrlInput').value : val;
+  if(val == 2) mode_run = true;
+  else if(val == 0) mode_run = false;
+  // let buffer = getWsSendBuffer("ctrl", "", intToByteArrayTyped(value, 1, 'ui8'));
+  let buffer = getWsSendBuffer("data", "runn", intToByteArrayTyped(value, 1, 'ui8'));
+  ws.send(buffer);
+}
 
 function wsSendData(elm) {
 
-  if (elm == 'runnn') {
-    console.log(getWsSendBuffer("data", "runn", intToByteArrayTyped(document.getElementById('runnum').value, 1, 'ui8')));
-    ws.send(getWsSendBuffer("data", "runn", intToByteArrayTyped(document.getElementById('runnum').value, 1, 'ui8')));
-  } else if (elm == 'runnr') {
-    console.log(getWsSendBuffer("data", "runn", intToByteArrayTyped(document.getElementById('rrun').value, 1, 'ui8')));
-    ws.send(getWsSendBuffer("data", "runn", intToByteArrayTyped(document.getElementById('rrun').value, 1, 'ui8')));
-  } else if (elm == 'runns') {
-    ws.send(getWsSendBuffer("data", "runn", intToByteArrayTyped(document.getElementById('rStop').value, 1, 'ui8')));
-  } else if (elm == 'runnc') {
-    // console.log(getWsSendBuffer("data", "runn", intToByteArrayTyped(roboRun, 1, 'ui8')));
-    ws.send(getWsSendBuffer("data", "runn", intToByteArrayTyped(document.getElementById('calib').value, 1, 'ui8')));
-  } else if (elm == 'swit') {
-    ws.send("swit");
-  }
-
-  else if (elm == 'kpid') {
+  if (elm == 'kpid') {
     const kpid_cat = document.getElementById('kpid_cat').value;
-    console.log(kpid_cat);
+    // console.log(kpid_cat);
 
-    let col = kpid_cat === "kpid" ? 0 : kpid_cat === "krRP" ? 1 : kpid_cat === "kryw" ? 2 : 0;
+    let col = kpid_cat === "Rpid" ? 0 : kpid_cat === "Ppid" ? 1 : kpid_cat === "Ypid" ? 2 : kpid_cat === "Apid" ? 3 : 0;
 
     kpidvalues[col][0] = document.getElementById('kp').value;
     kpidvalues[col][1] = document.getElementById('ki').value;
@@ -475,17 +487,49 @@ function wsSendData(elm) {
     ws.send(buf);
   }
 }
-function sendtows() {
+
+function sendtows() {}
+function sendtowsp() {
   let x_slider_val = drone_X;
   let atitude_slider_val = atitude_slider.value;
   let y_slider_val = drone_Y;
-  // console.log(x_slider_val + "  " + atitude_slider_val);
-  const buf = getWsSendBuffer("driv", "",
-    intToByteArrayTyped(x_slider_val, 2, 'i16'),
-    intToByteArrayTyped(atitude_slider_val, 2, 'i16'),
-    intToByteArrayTyped(y_slider_val, 2, 'i16'));
-  // console.log(buf);
+  
+  // const buf = getWsSendBuffer("data", "TRPY",
+  //   intToByteArrayTyped(atitude_slider_val, 2, 'i16'),
+  //   intToByteArrayTyped(x_slider_val, 2, 'i16'),
+  //   intToByteArrayTyped(y_slider_val, 2, 'i16'));
+
+    const buf = getWsSendBuffer("driv", "",
+      intToByteArrayTyped(x_slider_val, 2, 'i16'),
+      intToByteArrayTyped(atitude_slider_val, 2, 'i16'),
+      intToByteArrayTyped(y_slider_val, 2, 'i16'));
+  console.log(buf);
   ws.send(buf);
+}
+
+let periodicWsTsk = null;
+let pingWebSocket = null;
+
+function ws_loop(){
+  if(ws_connected){
+    if(periodicWsTsk === null && mode_run == true) periodicWsTsk = setInterval(sendtowsp, 100);
+    if(periodicWsTsk != null && mode_run == false){
+      clearInterval(periodicWsTsk);
+      periodicWsTsk = null
+    }
+
+    if(pingWebSocket == null) pingWebSocket = setInterval(() => {ws.send("ping"); console.log("ping");}, 1000);
+    document.getElementById('progress').innerText = "Connected !";
+  } else {
+    if(periodicWsTsk != null) {
+      clearInterval(periodicWsTsk);
+      periodicWsTsk = null;
+    }
+    if(pingWebSocket != null) {
+      clearInterval(pingWebSocket);
+      pingWebSocket = null;
+    }
+  }
 }
 
 // Prevent zooming with more than one finger
@@ -499,3 +543,5 @@ document.addEventListener('touchstart', function(e) {
 document.addEventListener('gesturestart', function(e) {
   e.preventDefault(); // Prevent zoom gesture
 }, { passive: false });
+
+let loop_tsk = setInterval(ws_loop, 50);

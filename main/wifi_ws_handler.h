@@ -127,7 +127,7 @@ public:
         if(!ESP_WIFI_DEV::WIFI_CONNECTED_SUC || ESP_WIFI_DEV::ws_connected_client_sockfd < 0) return;
         // return;
         
-        const char* DatakeysForWSInit[] = {"motm", "motc", "kpid", "kryw"};
+        const char* DatakeysForWSInit[] = {"motm", "motc", "Rpid", "Ppid", "Ypid", "ARid"};
         uint8_t numberofdata = sizeof(DatakeysForWSInit) / 4;
 
         for(uint8_t i = 0; i < numberofdata; i++){
@@ -205,7 +205,7 @@ private:
     
     static esp_err_t ws_TEXT_handler(httpd_ws_frame_t *ws_pkt){
         char ws_dt_type[5];
-        strlcpy(ws_dt_type, (char*)ws_pkt->payload, sizeof(ws_dt_type));
+        strlcpy(ws_dt_type, (char*)ws_pkt->payload, 5);
 
         // printf("wsRx: %s", (char*)ws_pkt->payload);
 
@@ -216,13 +216,15 @@ private:
         else if(strcmp(ws_dt_type, "rest") == 0)
             esp_restart();
         else if(strcmp(ws_dt_type, "data") == 0){
-            strlcpy(ws_dt_type, (char*)(ws_pkt->payload + 4), sizeof(ws_dt_type));
-            // ESP_LOGI("DTDT", "setting var : %s", ws_dt_type); /////////////
+            strlcpy(ws_dt_type, (char*)(ws_pkt->payload + 4), 5);
+            ESP_LOGI("DTDT", "setting var : %s", ws_dt_type); /////////////
             if(strcmp(ws_dt_type, "runn") == 0){
                 running_task = *(uint8_t*)(ws_pkt->payload + 8);
-                return ESP_OK;
-            }
-            ESP_WIFI_DEV::nvsDataStorage->writeToNVS(ws_dt_type, (ws_pkt->payload + 8));
+            } else if(strcmp(ws_dt_type, "Apid") == 0){
+                ESP_WIFI_DEV::nvsDataStorage->writeToNVS("ARid", (ws_pkt->payload + 8));
+                ESP_WIFI_DEV::nvsDataStorage->writeToNVS("APid", (ws_pkt->payload + 8));
+            } else
+                ESP_WIFI_DEV::nvsDataStorage->writeToNVS(ws_dt_type, (ws_pkt->payload + 8));
         }
         else if(strcmp(ws_dt_type, "swit") == 0){
             // set_led_flash();

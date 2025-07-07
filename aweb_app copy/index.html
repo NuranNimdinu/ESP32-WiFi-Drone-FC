@@ -28,9 +28,10 @@
 
   <div id="set_param_kpid" class="d1_dropdown">
     <select id="kpid_cat" onchange="changeKpid()">
-      <option value="kpid">kpid</option>
-      <option value="krRP">Rate Ro Pi</option>
-      <option value="kryw">Rate Yaw</option>
+      <option value="Rpid">Rpid</option>
+      <option value="Ppid">Ppid</option>
+      <option value="Ypid">Ypid</option>
+      <option value="Apid">Apid</option>
     </select>
     <br>
     <label for="kp">Kp :</label>
@@ -74,13 +75,15 @@
     <div class="setting_buttons">
 
       <button id="espReset">RESTART ESP</button>
-      <button id="rrun" onclick="wsSendData('runnr')" value=2>RUN</button>
-      <button id="rStop" onclick="wsSendData('runns')" value=0>STOP</button>
-      <button id="calib" onclick="wsSendData('runnc')" value=3>calibration</button>
-      <label for="runnum">runNum</label>
-      <input id="runnum" type="number">
-      <button onclick="wsSendData('runnn')">runn</button>
-      <button onclick="wsSendData('swit')">SWITCH</button>
+      <button id="rrun" onclick="sendControlBtn(2)" value=2>RUN</button>
+      <button id="rStop" onclick="sendControlBtn(0)" value=0>STOP</button>
+      <button id="calib" onclick="sendControlBtn(3)" value=3>calibration</button>
+      <label for="ctrlInput">runNum</label>
+      <input id="ctrlInput" type="number">
+      <button onclick="sendControlBtn('input')">runn</button>
+      <label id="loop_frq_meter">000</label>
+      <label id="wifi_sognal_str">000</label>
+    <!-- <button onclick="wsSendData('swit')">SWITCH</button> -->
     </div>
 
     <div id="EM_stop_btn">
@@ -92,7 +95,8 @@
       <div class="verticle_slider-container atitude_slider-container">
         <label class="verticle_slider_header">ATITUDE</label>
         <input type="range" class="verticle_slider" id="atitude_slider"
-          oninput="set_value_range_slider('atitude_slider'), sendtows()" min="2048" max="4095" value="2048">
+          oninput="set_value_range_slider('atitude_slider'), sendtows()" min="0" max="1000" value="0">
+          <!-- oninput="set_value_range_slider('atitude_slider'), sendtows()" min="2048" max="4095" value="2048"> -->
         <label class="verticle_slider_val" id="atitude_slider_val">00</label>
       </div>
       <!-- <div class="verticle_slider-container atitude_slider-container">

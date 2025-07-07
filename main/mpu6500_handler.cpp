@@ -18,7 +18,7 @@ const char* TAG = "MPU";
 
 MPU6050 mpu;
 
-float mpuIMU_roll, mpuIMU_pitch, mpuIMU_yaw; /// final vals
+// float mpuIMU_roll, mpuIMU_pitch, mpuIMU_yaw; /// final vals
 
 uint16_t mpuIMU_fifoCount;		// count of all bytes currently in FIFO
 uint8_t mpuIMU_fifoBuf[64]; // FIFO storage buffer
@@ -47,14 +47,14 @@ void getEuler() {
 }
 
 // display Euler angles in degrees
-void getYawPitchRoll() {
+void getYawPitchRoll(float *angles) {
 	mpu.dmpGetQuaternion(&q, mpuIMU_fifoBuf);
 	mpu.dmpGetGravity(&gravity, &q);
 	mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
-	mpuIMU_roll = ypr[2] * RAD_TO_DEG;
-	mpuIMU_pitch = ypr[1] * RAD_TO_DEG;
-	mpuIMU_yaw = ypr[0] * RAD_TO_DEG;
+	angles[0] = ypr[2] * RAD_TO_DEG;
+	angles[1] = ypr[1] * RAD_TO_DEG;
+	angles[2] = ypr[0] * RAD_TO_DEG;
 
 	//printf("ypr roll:%3.1f pitch:%3.1f yaw:%3.1f\n",ypr[2] * RAD_TO_DEG, ypr[1] * RAD_TO_DEG, ypr[0] * RAD_TO_DEG);
 	// ESP_LOGI(TAG, "roll:%f pitch:%f yaw:%f",ypr[2] * RAD_TO_DEG, ypr[1] * RAD_TO_DEG, ypr[0] * RAD_TO_DEG);
@@ -81,6 +81,7 @@ void getWorldAccel() {
 	// printf("aworld x:%d y:%d z:%d\n", aaWorld.x, aaWorld.y, aaWorld.z);
 }
 
+int16_t mpu6050_gyro_cal[3] = {0};
 void mpu6050_calibrate(int16_t *offsets){
 	
 	mpu.setDMPEnabled(false);
@@ -104,6 +105,25 @@ void mpu6050_calibrate(int16_t *offsets){
 	int16_t* offmp = mpu.GetActiveOffsets();
 	memcpy(offsets, offmp, sizeof(int16_t)*6);
 
+	ESP_LOGI("MPU", "calibrating gryo");
+	int32_t cal_temp[3] = {0};
+	int16_t temp[3] = {0};
+	for(uint8_t i = 0; i < 200; i++){
+		mpu.getRotation(&temp[0], &temp[1], &temp[2]);
+		cal_temp[0] += temp[0];
+		cal_temp[1] += temp[1];
+		cal_temp[2] += temp[2];
+		printf(".");
+		vTaskDelay(pdMS_TO_TICKS(5));
+	}
+	printf(".\n");
+
+	mpu6050_gyro_cal[0] = (float)cal_temp[0] / 200;
+	mpu6050_gyro_cal[1] = (float)cal_temp[1] / 200;
+	mpu6050_gyro_cal[2] = (float)cal_temp[2] / 200;
+
+	ESP_LOGI("MPU", "calibrating gryo done");
+
 	mpu.setDMPEnabled(true);
 }
 
@@ -118,7 +138,7 @@ void mpu6050_init_task(void buz(uint16_t gg), int16_t* offsets){
 			vTaskDelay(40);
 		}
 	}
-	
+	// calibrate
 	// mpu6050_calibrate(offsets);
 
 	mpu.setXAccelOffset(offsets[0]);
@@ -128,8 +148,13 @@ void mpu6050_init_task(void buz(uint16_t gg), int16_t* offsets){
 	mpu.setYGyroOffset(offsets[4]);
 	mpu.setZGyroOffset(offsets[5]);
 
-	// mpu.setInterruptLatchClear(true);
-	// mpu.setIntDMPEnabled(true);
+	mpu.setInterruptLatchClear(true);
+	mpu.setIntDMPEnabled(true);
+
+	printf("int latch = %d\n", mpu.getInterruptMode());
+	printf("int latch = %d\n", mpu.getInterruptLatchClear());
+	printf("int latch = %d\n", mpu.getIntDMPStatus());
+	printf("int latch = %d\n", mpu.getIntDMPEnabled());
 
 	mpu.setDMPEnabled(true);
 
@@ -139,12 +164,32 @@ void mpu6050_init_task(void buz(uint16_t gg), int16_t* offsets){
 uint8_t printin_tig = 0;
 uint8_t debug_output_type = 0;
 
-bool mpu6050_task(){
+float gyro_sensitivity_factor = 0.0f;
+void mpu6050_get_gyro(float *gyRate){
+	int16_t temp[3] = {0};
+	mpu.getRotation(&temp[0], &temp[1], &temp[2]);
+
+	if(gyro_sensitivity_factor == 0.0f){
+		uint8_t ff = mpu.getFullScaleGyroRange();
+		ESP_LOGI("MPU", "GYRO SENS %d", ff);
+		gyro_sensitivity_factor = (ff == 0) ? 131.0f : 
+								  (ff == 1) ? 65.5f :
+								  (ff == 2) ? 32.8f :
+								  (ff == 3) ? 16.4f : 0.0f;
+	}
+
+	gyRate[0] = (float)(temp[0] - mpu6050_gyro_cal[0]) / gyro_sensitivity_factor;
+	gyRate[1] = (float)(temp[1] - mpu6050_gyro_cal[1]) / gyro_sensitivity_factor;
+	gyRate[2] = (float)(temp[2] - mpu6050_gyro_cal[2]) / gyro_sensitivity_factor;
+}
+
+bool mpu6050_task(float *angles, float *gyRate){
 	uint16_t fifobufsz = mpu.getFIFOCount();
 
 	if(fifobufsz >= mpuIMU_fifoCount){
 		if(!mpu.dmpGetCurrentFIFOPacket(mpuIMU_fifoBuf))return false;
-		getYawPitchRoll();
+		getYawPitchRoll(angles);
+		mpu6050_get_gyro(gyRate);
 		return true;
 	}
 

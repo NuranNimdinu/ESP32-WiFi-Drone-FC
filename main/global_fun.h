@@ -6,7 +6,8 @@
 
 
 // #define BUZZER_PIN GPIO_NUM_23
-gpio_num_t BUZZER_PIN = GPIO_NUM_8;
+// gpio_num_t BUZZER_PIN = GPIO_NUM_8;
+gpio_num_t BUZZER_PIN = GPIO_NUM_23;
 
 TimerHandle_t buzzer_timer_h;
 static volatile bool buzz_active = true;

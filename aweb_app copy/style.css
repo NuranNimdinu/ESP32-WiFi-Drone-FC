@@ -1,0 +1,123 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: black;
+    color: white;
+    margin: 0;
+    overflow: hidden;
+}
+header {
+  background-color: rgb(66, 66, 66);
+  padding: 5px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 30px;
+}
+header h2 {
+  margin: 0 auto;
+}
+
+.d1_dropdown{
+    visibility: hidden;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    margin: 20px;
+    border: 2px solid lightblue;
+    background-color: rgb(52, 52, 52);
+    border-radius: 5px;
+    padding: 10px;
+    width: max-content;
+    height: max-content;
+}
+.setting_buttons {
+    background-color: gray;
+    padding: 10px;
+  height: max-content;
+}
+
+#esp_console{
+    visibility: hidden;
+    /* position: absolute; */
+    z-index: 1000;
+}
+#deb_console_box {
+    position: relative;
+  height: 350px;
+  margin: 10px 0px;
+  padding: 10px;
+  width: 80vw;
+  background-color: rgb(31, 31, 31);
+  border: 2px solid lightblue;
+  border-radius: 5px;
+  overflow-y: scroll;
+}
+#controllers_box{
+    margin: auto;
+    width: 80%;
+    height: max-content;
+    border: 2px solid lightblue;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-around;
+}
+.verticle_slider-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    height: 350px;
+    width: 20px;
+    position: relative;
+    margin: 50px;
+}
+.verticle_slider {
+    display: block;
+    appearance: none;
+    transform: rotate(-90deg);
+    width: 250px;
+    height: 20px;
+    border-radius: 5px;
+    background-color: rgb(144, 211, 238);
+    cursor: pointer;
+    position: relative;
+}
+
+.verticle_slider::-webkit-slider-thumb {
+    appearance: none;
+    /* margin: auto; */
+    position: relative;
+    width: 30px;
+    height: 30px;
+    background-color: red;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.verticle_slider_val{
+    color: wheat;
+    z-index: 100;
+    font-weight: 700;
+    font-size: x-large;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.verticle_slider_header{
+    color: wheat;
+    z-index: 100;
+    font-weight: 700;
+    font-size: x-large;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+#EM_stop_btn{
+    display: flex;
+    width: 80vw; 
+    height: 5vh; 
+    background-color: red;
+    margin: 2vh auto;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 2px solid red;
+    justify-content: center;
+}
+#EM_stop_btn:active{
+    background-color: rgb(135, 0, 0);
+}
