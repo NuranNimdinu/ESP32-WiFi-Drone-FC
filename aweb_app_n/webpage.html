@@ -1,3 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>DRONE</title>
+  <style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: black;
+    color: white;
+    margin: 0;
+    overflow: hidden;
+}
+header {
+  background-color: rgb(66, 66, 66);
+  padding: 5px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 30px;
+}
+header h2 {
+  margin: 0 auto;
+}
+
+.d1_dropdown{
+    visibility: hidden;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    margin: 20px;
+    border: 2px solid lightblue;
+    background-color: rgb(52, 52, 52);
+    border-radius: 5px;
+    padding: 10px;
+    width: max-content;
+    height: max-content;
+}
+.setting_buttons {
+    background-color: gray;
+    padding: 10px;
+  height: max-content;
+}
+
+#esp_console{
+    visibility: hidden;
+    /* position: absolute; */
+    z-index: 1000;
+}
+#deb_console_box {
+    position: relative;
+  height: 350px;
+  margin: 10px 0px;
+  padding: 10px;
+  width: 80vw;
+  background-color: rgb(31, 31, 31);
+  border: 2px solid lightblue;
+  border-radius: 5px;
+  overflow-y: scroll;
+}
+#controllers_box{
+    margin: auto;
+    width: 80%;
+    height: max-content;
+    border: 2px solid lightblue;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-around;
+}
+.verticle_slider-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    height: 350px;
+    width: 20px;
+    position: relative;
+    margin: 50px;
+}
+.verticle_slider {
+    display: block;
+    appearance: none;
+    transform: rotate(-90deg);
+    width: 250px;
+    height: 20px;
+    border-radius: 5px;
+    background-color: rgb(144, 211, 238);
+    cursor: pointer;
+    position: relative;
+}
+
+.verticle_slider::-webkit-slider-thumb {
+    appearance: none;
+    /* margin: auto; */
+    position: relative;
+    width: 30px;
+    height: 30px;
+    background-color: red;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.verticle_slider_val{
+    color: wheat;
+    z-index: 100;
+    font-weight: 700;
+    font-size: x-large;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.verticle_slider_header{
+    color: wheat;
+    z-index: 100;
+    font-weight: 700;
+    font-size: x-large;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+#EM_stop_btn{
+    display: flex;
+    width: 80vw; 
+    height: 5vh; 
+    background-color: red;
+    margin: 2vh auto;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 2px solid red;
+    justify-content: center;
+}
+#EM_stop_btn:active{
+    background-color: rgb(135, 0, 0);
+}
+</style>
+</head>
+
+<body style="touch-action: none;">
+  <header>
+    <button id="update_button" onclick="open_pannel('update_dropdown')">UPDATE</button>
+    <button id="kpid_button" onclick="open_pannel('set_param_kpid')">KPID</button>
+    <button id="mot_para_button" onclick="open_pannel('set_param_motors')">MOTOR</button>
+    <button id="console_button" onclick="open_pannel('esp_console')">CONSOLE</button>
+    <button onclick="js_fullScreen_func()" style="margin-left: 5px;">⛶</button>
+    <h2>ESP DRONE</h2>
+    <span style="margin-right: 2vw;">
+      <span>♻️ </span>
+      <span id="loop_frq_meter" >----</span>
+    </span>
+    <span style="margin-right: 2vw;">
+      <span>🔋 </span>
+      <span id="drone_batt_lvl" >----</span>
+    </span>
+    <span style="margin-right: 10vw;">
+      <span>📡 </span>
+      <span id="wifi_sognal_str" >----</span>
+    </span>
+    <label id="ws_connection_status">Connecting....</label>
+  </header>
+
+  <div id="update_dropdown" class="d1_dropdown">
+    <input type="file" id="fileInput" />
+    <br>
+    <button id="uploadButton">Upload</button>
+    <br>
+    <label id="progressupload">Upload Progress</label>
+  </div>
+
+  <div id="set_param_kpid" class="d1_dropdown">
+    <select id="kpid_cat" onchange="changeKpid()">
+      <option value="Rpid">Rpid</option>
+      <option value="Ppid">Ppid</option>
+      <option value="Ypid">Ypid</option>
+      <option value="Apid">Apid</option>
+      <option value="VerR">VerR</option>
+      <option value="VerV">VerV</option>
+    </select>
+    <br>
+    <label for="kp">Kp :</label>
+    <input id="kp" type="number" value="0">
+    <br>
+    <label for="ki">Ki :</label>
+    <input id="ki" type="number" value="0">
+    <br>
+    <label for="kd">Kd :</label>
+    <input id="kd" type="number" value="0">
+    <br>
+    <button onclick="wsSendData('kpid')">Send Kpid</button>
+  </div>
+
+  <div id="set_param_motors" class="d1_dropdown">
+    <h4>MOTOR CALIB</h4>
+    <label for="calib_mot_1">m1 :</label>
+    <input id="calib_mot_1" type="number" value="0">
+    <label for="bcalib_mot_2">m2 :</label>
+    <input id="calib_mot_2" type="number" value="0">
+    <label for="calib_mot_3">m3 :</label>
+    <input id="calib_mot_3" type="number" value="0">
+    <label for="calib_mot_4">m4 :</label>
+    <input id="calib_mot_4" type="number" value="0">
+    <br>
+    <button onclick="wsSendData('motc')">set motor calib</button>
+    <br>
+    <label for="max_mot">max motor :</label>
+    <input id="max_mot" type="number" value="0" max="1024" min="0">
+    <button onclick="wsSendData('motm')">set motor max</button>
+  </div>
+
+  <div id="esp_console" class="d1_dropdown">
+    <div id="deb_console_box">
+      <p id="deb_console"></p>
+    </div>
+    <button onclick="resetcon()">clear console</button>
+  </div>
+
+  <div id="container">
+    <div class="setting_buttons">
+
+      <button id="espReset">RESTART ESP</button>
+      <button id="rrun" onclick="sendControlBtn(2)" value=2>RUN</button>
+      <button id="rStop" onclick="sendControlBtn(0)" value=0>STOP</button>
+      <button id="calib" onclick="sendControlBtn(3)" value=3>calibration</button>
+      <label for="ctrlInput">runNum</label>
+      <input id="ctrlInput" type="number">
+      <button onclick="sendControlBtn('input')">runn</button>
+      <label style="margin-left: 10px;" id="progress">....</label>
+    <!-- <button onclick="wsSendData('swit')">SWITCH</button> -->
+    </div>
+
+    <div id="EM_stop_btn">
+      <h3 style="margin: auto;">EMERGENCY STOP</h3>
+    </div>
+
+    <div id="debug_data_info" style="position: absolute; color: rgb(164, 164, 164); margin-left: 10px; z-index: -1;"> 
+      <p>_DEBUG INFO_</p>
+    </div>
+
+    <div id="controllers_box">
+
+      <div class="verticle_slider-container atitude_slider-container">
+        <label class="verticle_slider_header">ATITUDE</label>
+        <input type="range" class="verticle_slider" id="atitude_slider"
+          oninput="set_value_range_slider('atitude_slider'), sendtows()" min="0" max="1000" value="0">
+          <!-- oninput="set_value_range_slider('atitude_slider'), sendtows()" min="-1000" max="1000" value="0"> -->
+          <!-- oninput="set_value_range_slider('atitude_slider'), sendtows()" min="2048" max="4095" value="2048"> -->
+        <label class="verticle_slider_val" id="atitude_slider_val">00</label>
+      </div>
+      <!-- <div class="verticle_slider-container atitude_slider-container">
+        <label class="verticle_slider_header">X</label>
+        <input type="range" class="verticle_slider" id="x_slider"
+          oninput="set_value_range_slider('x_slider') , sendtows()" min="-512" max="512" value="0">
+        <label class="verticle_slider_val" id="x_slider_val">00</label>
+      </div> -->
+      <div id="joyBox" style="border: 1px solid yellow; border-radius: 10px;">
+        <p style="text-align: center;">
+          X: <span id="x_coordinate"> </span>
+          Y: <span id="y_coordinate"> </span>
+          <!-- Speed: <span id="speed"> </span> %
+          Angle: <span id="angle"> </span> -->
+        </p>
+        <canvas id="canvas" name="game"></canvas>
+      </div>
+    </div>
+
+
+  </div>
+
+
+  <script>
 
 /// html functions
 let opened_pannel = "";
@@ -39,11 +305,11 @@ emergency_stop_btn.addEventListener('click', () =>{
 //   sendtows();
 // });
 
-let kpidvalues = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]];
+let kpidvalues = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]];
 
 function changeKpid() {
   const kpid_cat = document.getElementById('kpid_cat').value;
-  let col = kpid_cat === "Rpid" ? 0 : kpid_cat === "Ppid" ? 1 : kpid_cat === "Ypid" ? 2 : kpid_cat === "Apid" ? 3 : 0;
+  let col = kpid_cat === "Rpid" ? 0 : kpid_cat === "Ppid" ? 1 : kpid_cat === "Ypid" ? 2 : kpid_cat === "Apid" ? 3 : kpid_cat === "VerR" ? 4 : kpid_cat === "VerV" ? 5 : 0;
 
   document.getElementById('kp').value = kpidvalues[col][0]
   document.getElementById('ki').value = kpidvalues[col][1]
@@ -82,7 +348,7 @@ window.addEventListener('load', () => {
 
 var width, height, radius, runRadius, x_orig, y_orig;
 function resize() {
-  console.log(window.innerHeight, window.innerWidth)
+  // console.log(window.innerHeight, window.innerWidth)
   if (window.innerWidth > window.innerHeight * 1.5) {
     width = window.innerHeight / 1.5;
   }
@@ -224,6 +490,22 @@ function Draw(event) {
   }
 }
 ///////////////////////
+let deb_info_p = document.getElementById("debug_data_info");
+let deb_info_p_elems = [];
+function handle_debug_info(type = "", value = ""){
+  // let deb_type = Number(type.slice(3)) - 1;
+  let deb_type = Number(type) - 1;
+  if (deb_info_p_elems[deb_type] === undefined){
+    deb_info_p_elems[deb_type] = document.createElement('p');
+    deb_info_p_elems[deb_type].innerText = value;
+    // deb_info_p.appendChild(deb_info_p_elems[deb_type]);
+    deb_info_p.insertBefore(deb_info_p_elems[deb_type], deb_info_p.children[deb_type + 1]);
+  } else {
+    deb_info_p_elems[deb_type].innerText = value;
+  }
+}
+
+////
 
 // const ws = new WebSocket('ws://192.168.238.130:81'); // Replace with your ESP32's WebSocket URL
 // const ws = new WebSocket('ws://192.168.1.8:81'); // Replace with your ESP32's WebSocket URL
@@ -234,7 +516,7 @@ const ws = new WebSocket('ws://drone.local:81'); // Replace with your ESP32's We
 let binchuncksend = false;
 let deb_consoleData = "";
 
-let ws_connected = false;
+let ws_connected = 2;
 let mode_run = false;
 
 function resetcon() {
@@ -244,7 +526,7 @@ function resetcon() {
 ws.onopen = () => {
   console.log('Connected to WebSocket');
   setTimeout(() => {
-    ws_connected = true; 
+    ws_connected = 1; 
   }, 500);
 };
 
@@ -257,15 +539,16 @@ ws.onmessage = (event) => {
 
       const decoderTXT = new TextDecoder('utf-8');
       let dtType = decoderTXT.decode(wsBufArr.slice(0, 4));
-      console.log("dtype :" + dtType + "buf", wsBufArr.slice(4));
+      // console.log("dtype :" + dtType + "buf", wsBufArr.slice(4));
       
-      if (dtType === "LFRQ") {
-        document.getElementById('loop_frq_meter').innerText = " LF: " + binaryToInt(wsBufArr.slice(4, 6), 'i16');
+      // if (dtType === "LFRQ") {
+      //   document.getElementById('loop_frq_meter').innerText = " LF: " + binaryToInt(wsBufArr.slice(4, 6), 'i16');
 
-      } else  if (dtType === "WRSS") {
-        document.getElementById('wifi_sognal_str').innerText = " WIFI: " + binaryToInt(wsBufArr.slice(4, 6), 'i16');
+      // } else  if (dtType === "WRSS") {
+      //   document.getElementById('wifi_sognal_str').innerText = " WIFI: " + binaryToInt(wsBufArr.slice(4, 6), 'i16');
 
-      } else if (dtType === "motc") {
+      // } else 
+      if (dtType === "motc") {
         document.getElementById('calib_mot_1').value = binaryToInt(wsBufArr.slice(4, 6), 'i16');
         document.getElementById('calib_mot_2').value = binaryToInt(wsBufArr.slice(6, 8), 'i16');
         document.getElementById('calib_mot_3').value = binaryToInt(wsBufArr.slice(8, 10), 'i16');
@@ -273,8 +556,8 @@ ws.onmessage = (event) => {
 
       } else if (dtType === "motm") {
         document.getElementById('max_mot').value = binaryToInt(wsBufArr.slice(4, 8), 'i16');
-      } else if (dtType === "Rpid" || dtType === "Ppid" || dtType === "Ypid" || dtType === "ARid") {
-        let col = dtType === "Rpid" ? 0 : dtType === "Ppid" ? 1 : dtType === "Ypid" ? 2 : dtType === "ARid" ? 3 : 0;
+      } else if (dtType === "Rpid" || dtType === "Ppid" || dtType === "Ypid" || dtType === "ARid" || dtType === "VerR" || dtType === "VerV") {
+        let col = dtType === "Rpid" ? 0 : dtType === "Ppid" ? 1 : dtType === "Ypid" ? 2 : dtType === "ARid" ? 3 : dtType === "VerR" ? 4 :dtType === "VerV" ? 5 : 0;
 
         kpidvalues[col][0] = binaryToInt(wsBufArr.slice(4, 8), 'f32');
         kpidvalues[col][1] = binaryToInt(wsBufArr.slice(8, 12), 'f32');
@@ -305,20 +588,28 @@ ws.onmessage = (event) => {
       else if (ws_data[0] == "P") document.getElementById('progress').innerText = 'ESP update ' + ws_data.slice(1) + ' %';
     }
     else if (ws_dt_type == "mpf") document.getElementById('loop_frq_meter').innerText = ws_data;
+    else if (ws_dt_type == "wif") document.getElementById('wifi_sognal_str').innerText = ws_data;
     else if (ws_dt_type == "CMD") document.getElementById('progress').innerText = ws_data;
     else if (ws_dt_type == "JUN") document.getElementById('junjun').innerText = ws_data;
     else if (ws_dt_type == "JUC") document.getElementById('jucjuc').innerText = ws_data;
+    else if (ws_dt_type == "BAT") document.getElementById('drone_batt_lvl').innerText = ws_data;
     else if (ws_dt_type == "DEB") {
     // else if (ws_dt_type == "DEBG") {
-      if (deb_consoleData.length > 10000) deb_consoleData = deb_consoleData.slice(1000);
-      deb_consoleData += ws_data;
-      document.getElementById('deb_console').innerText = deb_consoleData;
+      let deb_t = ws_data[0];
+      if(deb_t == "V"){
+        if (deb_consoleData.length > 10000) deb_consoleData = deb_consoleData.slice(1000);
+        deb_consoleData += ws_data.slice(1);
+        document.getElementById('deb_console').innerText = deb_consoleData;
+      } else{
+        handle_debug_info(deb_t, ws_data.slice(1));
+      }
     }
   }
 };
 
 ws.onclose = () => {
   console.log('WebSocket connection closed');
+  ws_connected = 0; 
 };
 function binaryToInt(bin, type) {
   const view = new DataView(bin);
@@ -455,7 +746,7 @@ function wsSendData(elm) {
     const kpid_cat = document.getElementById('kpid_cat').value;
     // console.log(kpid_cat);
 
-    let col = kpid_cat === "Rpid" ? 0 : kpid_cat === "Ppid" ? 1 : kpid_cat === "Ypid" ? 2 : kpid_cat === "Apid" ? 3 : 0;
+    let col = kpid_cat === "Rpid" ? 0 : kpid_cat === "Ppid" ? 1 : kpid_cat === "Ypid" ? 2 : kpid_cat === "Apid" ? 3 : kpid_cat === "VerR" ? 4 : kpid_cat === "VerV" ? 5 : 0;
 
     kpidvalues[col][0] = document.getElementById('kp').value;
     kpidvalues[col][1] = document.getElementById('ki').value;
@@ -511,37 +802,60 @@ let periodicWsTsk = null;
 let pingWebSocket = null;
 
 function ws_loop(){
-  if(ws_connected){
-    if(periodicWsTsk === null && mode_run == true) periodicWsTsk = setInterval(sendtowsp, 100);
-    if(periodicWsTsk != null && mode_run == false){
-      clearInterval(periodicWsTsk);
-      periodicWsTsk = null
-    }
+  switch(ws_connected){
+    case 1:{
+      if(periodicWsTsk === null && mode_run == true) periodicWsTsk = setInterval(sendtowsp, 100);
+      if(periodicWsTsk != null && mode_run == false){
+        clearInterval(periodicWsTsk);
+        periodicWsTsk = null
+      }
 
-    if(pingWebSocket == null) pingWebSocket = setInterval(() => {ws.send("ping"); console.log("ping");}, 1000);
-    document.getElementById('progress').innerText = "Connected !";
-  } else {
-    if(periodicWsTsk != null) {
-      clearInterval(periodicWsTsk);
-      periodicWsTsk = null;
+      if(pingWebSocket == null) {
+        pingWebSocket = setInterval(() => {ws.send("ping"); console.log("ping");}, 1000);
+        document.getElementById('ws_connection_status').innerText = "Connected !";
+      }
     }
-    if(pingWebSocket != null) {
-      clearInterval(pingWebSocket);
-      pingWebSocket = null;
+    break;
+    case 0:{
+      document.getElementById('ws_connection_status').innerText = "Disconnected !";
+      ws_connected = 2;
+    }
+    default: {
+      if(periodicWsTsk != null) {
+        clearInterval(periodicWsTsk);
+        periodicWsTsk = null;
+      }
+      if(pingWebSocket != null) {
+        clearInterval(pingWebSocket);
+        pingWebSocket = null;
+      }
     }
   }
 }
 
-// Prevent zooming with more than one finger
-document.addEventListener('touchstart', function(e) {
-  if (e.touches.length > 1) {
-      e.preventDefault(); // Prevent zoom
+function js_fullScreen_func(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch((err) => {
+      console.log('error fullscreen ${err.message}');
+    });
+  } else {
+    document.exitFullscreen();
   }
-}, { passive: false });
+}
+// Prevent zooming with more than one finger
+// document.addEventListener('touchstart', function(e) {
+//   if (e.touches.length > 1) {
+//       e.preventDefault(); // Prevent zoom
+//   }
+// }, { passive: false });
 
 // Prevent pinch zooming with gestures
-document.addEventListener('gesturestart', function(e) {
-  e.preventDefault(); // Prevent zoom gesture
-}, { passive: false });
+// document.addEventListener('gesturestart', function(e) {
+//   e.preventDefault(); // Prevent zoom gesture
+// }, { passive: false });
 
 let loop_tsk = setInterval(ws_loop, 50);
+</script>
+</body>
+
+</html>

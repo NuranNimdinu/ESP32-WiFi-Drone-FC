@@ -23,7 +23,7 @@
     #define FC_HSPI_CS_PIN 27
 
     #define FC_GYRO_INT_PIN GPIO_NUM_2
-    #define FC_BATT_V_SEN_PIN 36
+    #define FC_BATT_V_SEN_PIN ADC1_CHANNEL_0 // 36
     #define FC_PIXLED_PIN 5
     #define FC_BUZZER_PIN GPIO_NUM_23
 

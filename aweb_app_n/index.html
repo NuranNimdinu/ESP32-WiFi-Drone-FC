@@ -8,14 +8,27 @@
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body style="touch-action: none;">
   <header>
     <button id="update_button" onclick="open_pannel('update_dropdown')">UPDATE</button>
     <button id="kpid_button" onclick="open_pannel('set_param_kpid')">KPID</button>
     <button id="mot_para_button" onclick="open_pannel('set_param_motors')">MOTOR</button>
     <button id="console_button" onclick="open_pannel('esp_console')">CONSOLE</button>
+    <button onclick="js_fullScreen_func()" style="margin-left: 5px;">⛶</button>
     <h2>ESP DRONE</h2>
-    <label id="progress">Connecting....</label>
+    <span style="margin-right: 2vw;">
+      <span>♻️ </span>
+      <span id="loop_frq_meter" >----</span>
+    </span>
+    <span style="margin-right: 2vw;">
+      <span>🔋 </span>
+      <span id="drone_batt_lvl" >----</span>
+    </span>
+    <span style="margin-right: 10vw;">
+      <span>📡 </span>
+      <span id="wifi_sognal_str" >----</span>
+    </span>
+    <label id="ws_connection_status">Connecting....</label>
   </header>
 
   <div id="update_dropdown" class="d1_dropdown">
@@ -32,6 +45,8 @@
       <option value="Ppid">Ppid</option>
       <option value="Ypid">Ypid</option>
       <option value="Apid">Apid</option>
+      <option value="VerR">VerR</option>
+      <option value="VerV">VerV</option>
     </select>
     <br>
     <label for="kp">Kp :</label>
@@ -81,13 +96,16 @@
       <label for="ctrlInput">runNum</label>
       <input id="ctrlInput" type="number">
       <button onclick="sendControlBtn('input')">runn</button>
-      <label id="loop_frq_meter">000</label>
-      <label id="wifi_sognal_str">000</label>
+      <label style="margin-left: 10px;" id="progress">....</label>
     <!-- <button onclick="wsSendData('swit')">SWITCH</button> -->
     </div>
 
     <div id="EM_stop_btn">
       <h3 style="margin: auto;">EMERGENCY STOP</h3>
+    </div>
+
+    <div id="debug_data_info" style="position: absolute; color: rgb(164, 164, 164); margin-left: 10px; z-index: -1;"> 
+      <p>_DEBUG INFO_</p>
     </div>
 
     <div id="controllers_box">
@@ -96,6 +114,7 @@
         <label class="verticle_slider_header">ATITUDE</label>
         <input type="range" class="verticle_slider" id="atitude_slider"
           oninput="set_value_range_slider('atitude_slider'), sendtows()" min="0" max="1000" value="0">
+          <!-- oninput="set_value_range_slider('atitude_slider'), sendtows()" min="-1000" max="1000" value="0"> -->
           <!-- oninput="set_value_range_slider('atitude_slider'), sendtows()" min="2048" max="4095" value="2048"> -->
         <label class="verticle_slider_val" id="atitude_slider_val">00</label>
       </div>

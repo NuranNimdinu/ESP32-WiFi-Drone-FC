@@ -82,6 +82,8 @@ void getWorldAccel() {
 }
 
 int16_t mpu6050_gyro_cal[3] = {0};
+int16_t mpu6050_acc_cal[3] = {0};
+
 void mpu6050_calibrate(int16_t *offsets){
 	
 	mpu.setDMPEnabled(false);
@@ -124,6 +126,25 @@ void mpu6050_calibrate(int16_t *offsets){
 
 	ESP_LOGI("MPU", "calibrating gryo done");
 
+	ESP_LOGI("MPU", "calibrating accel");
+	cal_temp[3] = {0};
+	temp[3] = {0};
+	for(uint8_t i = 0; i < 200; i++){
+		mpu.getAcceleration(&temp[0], &temp[1], &temp[2]);
+		cal_temp[0] += temp[0];
+		cal_temp[1] += temp[1];
+		cal_temp[2] += temp[2];
+		printf(".");
+		vTaskDelay(pdMS_TO_TICKS(5));
+	}
+	printf(".\n");
+
+	mpu6050_acc_cal[0] = (float)cal_temp[0] / 200;
+	mpu6050_acc_cal[1] = (float)cal_temp[1] / 200;
+	mpu6050_acc_cal[2] = (float)cal_temp[2] / 200;
+
+	ESP_LOGI("MPU", "calibrating accel done");
+
 	mpu.setDMPEnabled(true);
 }
 
@@ -164,6 +185,25 @@ void mpu6050_init_task(void buz(uint16_t gg), int16_t* offsets){
 uint8_t printin_tig = 0;
 uint8_t debug_output_type = 0;
 
+float acc_sensitivity_factor = 0.0f;
+void mpu6050_get_accel(float *accel){
+	int16_t temp[3] = {0};
+	mpu.getAcceleration(&temp[0], &temp[1], &temp[2]);
+
+	if(acc_sensitivity_factor == 0.0f){
+		uint8_t ff = mpu.getFullScaleAccelRange();
+		ESP_LOGI("MPU", "ACC SENS %d", ff);
+		acc_sensitivity_factor = (ff == 0) ? 16384.f : 
+								 (ff == 1) ? 8192.f :
+								 (ff == 2) ? 4096.f :
+								 (ff == 3) ? 2048.f : 0.0f;
+	}
+
+	accel[0] = (float)(temp[0] - mpu6050_acc_cal[0]) / acc_sensitivity_factor;
+	accel[1] = (float)(temp[1] - mpu6050_acc_cal[1]) / acc_sensitivity_factor;
+	accel[2] = ((float)(temp[2] - mpu6050_acc_cal[2]) / acc_sensitivity_factor) + 1;
+}
+
 float gyro_sensitivity_factor = 0.0f;
 void mpu6050_get_gyro(float *gyRate){
 	int16_t temp[3] = {0};
@@ -183,13 +223,14 @@ void mpu6050_get_gyro(float *gyRate){
 	gyRate[2] = (float)(temp[2] - mpu6050_gyro_cal[2]) / gyro_sensitivity_factor;
 }
 
-bool mpu6050_task(float *angles, float *gyRate){
+bool mpu6050_task(float *angles, float *gyRate = NULL, float *accel = NULL){
 	uint16_t fifobufsz = mpu.getFIFOCount();
 
 	if(fifobufsz >= mpuIMU_fifoCount){
 		if(!mpu.dmpGetCurrentFIFOPacket(mpuIMU_fifoBuf))return false;
 		getYawPitchRoll(angles);
-		mpu6050_get_gyro(gyRate);
+		if(gyRate != NULL)mpu6050_get_gyro(gyRate);
+		if(accel != NULL)mpu6050_get_accel(accel);
 		return true;
 	}
 

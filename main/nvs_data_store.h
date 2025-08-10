@@ -6,7 +6,7 @@
 #include <esp_log.h>
 #include "string.h"
 
-#define numOfKeys 10
+#define numOfKeys 15
 
 class NVS_DATA_STORE{
     uint8_t stored_dt_num = 0;

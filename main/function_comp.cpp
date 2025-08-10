@@ -12,10 +12,10 @@ extern "C" {
 struct LOW_PASS_FILTER {
     float prv_value = 0;
     float coeff = 0.6f;
-    float get_filtered(float value){
-        value = this->coeff * this->prv_value + (1 - this->coeff) * value;
-        this->prv_value = value;
-        return value;
+    float get_filtered(float input){
+        float output = this->coeff * this->prv_value + (1 - this->coeff) * input;
+        this->prv_value = output;
+        return output;
     }
 };
 
